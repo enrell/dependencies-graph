@@ -1,5 +1,6 @@
 mod cargo;
 mod npm;
+mod poetry;
 
 use anyhow::{Result, bail};
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -14,7 +15,11 @@ pub trait StackParser {
 }
 
 fn parsers() -> Vec<Box<dyn StackParser>> {
-    vec![Box::new(cargo::CargoParser), Box::new(npm::NpmParser)]
+    vec![
+        Box::new(cargo::CargoParser),
+        Box::new(npm::NpmParser),
+        Box::new(poetry::PoetryParser),
+    ]
 }
 
 pub fn detect_and_parse(project_path: &Path, max_depth: Option<usize>) -> Result<DependencyGraph> {
@@ -27,7 +32,7 @@ pub fn detect_and_parse(project_path: &Path, max_depth: Option<usize>) -> Result
 
     bail!(
         "No supported project detected at {}.\n\
-         Supported: Rust (Cargo.lock), Node.js (package-lock.json)",
+         Supported: Rust (Cargo.lock), Node.js (package-lock.json), Python (poetry.lock)",
         project_path.display()
     )
 }
