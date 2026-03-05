@@ -1,4 +1,4 @@
-use depg::parser::{bfs, cargo, npm, poetry};
+use depg::parser::{bfs, cargo, go, npm, poetry};
 use std::collections::HashMap;
 
 #[test]
@@ -144,4 +144,14 @@ version = "2.0.4"
     assert_eq!(graph.root, "depg-py 0.1.0");
     assert_eq!(graph.nodes.len(), 4);
     assert_eq!(graph.edges.len(), 3);
+}
+
+#[test]
+fn test_parse_go_mod() {
+    let content = "example.com/mymod example.com/dep@v1.0.0\nexample.com/dep@v1.0.0 example.com/transitive@v2.0.0";
+    let graph = go::parse_content(content, "example.com/mymod", None).unwrap();
+
+    assert_eq!(graph.root, "example.com/mymod 0.0.0");
+    assert_eq!(graph.nodes.len(), 3);
+    assert_eq!(graph.edges.len(), 2);
 }

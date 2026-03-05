@@ -35,5 +35,5 @@ web/
 ## Supported Ecosystems
 - [x] Rust (Cargo.lock)
 - [x] Node.js (package-lock.json)
-- [ ] Go (go.mod)
+- [x] Go (go.mod)
 - [x] Python (poetry.lock)
