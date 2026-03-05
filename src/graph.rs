@@ -20,4 +20,5 @@ pub struct DependencyGraph {
     pub nodes: Vec<Node>,
     pub edges: Vec<Edge>,
     pub root: String,
+    pub parser: String,
 }

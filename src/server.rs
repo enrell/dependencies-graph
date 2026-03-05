@@ -25,6 +25,23 @@ pub async fn start(graph: DependencyGraph, port: u16, open_browser: bool) -> Res
                     async move { Json((*graph).clone()) }
                 }
             }),
+        )
+        .route(
+            "/api/debug",
+            get({
+                let graph = Arc::clone(&graph);
+                move || {
+                    let graph = Arc::clone(&graph);
+                    async move {
+                        Json(serde_json::json!({
+                            "parser": graph.parser,
+                            "root": graph.root,
+                            "nodes_count": graph.nodes.len(),
+                            "edges_count": graph.edges.len()
+                        }))
+                    }
+                }
+            }),
         );
 
     let addr = format!("127.0.0.1:{port}");
