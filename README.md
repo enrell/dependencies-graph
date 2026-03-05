@@ -19,12 +19,12 @@ A fast, interactive dependency graph visualizer for modern codebases. **depg** a
 
 **Linux / macOS**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/your-username/depg/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/enrell/dependencies-graph/master/install.sh | sh
 ```
 
 **Windows (PowerShell)**
 ```powershell
-irm https://raw.githubusercontent.com/your-username/depg/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/enrell/dependencies-graph/master/install.ps1 | iex
 ```
 
 ### 2. Using Cargo
@@ -32,7 +32,7 @@ irm https://raw.githubusercontent.com/your-username/depg/main/install.ps1 | iex
 If you have Rust installed natively, you can install directly via Cargo:
 
 ```bash
-cargo install --git https://github.com/your-username/depg.git
+cargo install --git https://github.com/enrell/dependencies-graph.git
 ```
 
 *Alternatively, clone the repository and run `cargo install --path .`*

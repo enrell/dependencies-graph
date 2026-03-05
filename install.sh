@@ -2,7 +2,7 @@
 set -e
 
 # Default to latest release
-VERSION=$(curl -sL https://api.github.com/repos/your-username/depg/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+VERSION=$(curl -sL https://api.github.com/repos/enrell/dependencies-graph/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 
 if [ -z "$VERSION" ]; then
     echo "Error: Could not retrieve latest version."
@@ -35,7 +35,7 @@ else
     exit 1
 fi
 
-URL="https://github.com/your-username/depg/releases/download/$VERSION/depg-$TARGET.tar.gz"
+URL="https://github.com/enrell/dependencies-graph/releases/download/$VERSION/depg-$TARGET.tar.gz"
 
 echo "Downloading from $URL"
 curl -sL "$URL" | tar -xz

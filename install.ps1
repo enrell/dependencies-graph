@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 # Default to latest release
-$Response = Invoke-RestMethod -Uri "https://api.github.com/repos/your-username/depg/releases/latest"
+$Response = Invoke-RestMethod -Uri "https://api.github.com/repos/enrell/dependencies-graph/releases/latest"
 $Version = $Response.tag_name
 
 if (-not $Version) {
@@ -12,7 +12,7 @@ if (-not $Version) {
 Write-Host "Installing depg $Version"
 
 $Target = "x86_64-pc-windows-msvc"
-$Url = "https://github.com/your-username/depg/releases/download/$Version/depg-$Target.zip"
+$Url = "https://github.com/enrell/dependencies-graph/releases/download/$Version/depg-$Target.zip"
 
 Write-Host "Downloading from $Url"
 $ZipPath = Join-Path $env:TEMP "depg.zip"
