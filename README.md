@@ -19,12 +19,12 @@ A fast, interactive dependency graph visualizer for modern codebases. **depg** a
 
 **Linux / macOS**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/enrell/dependencies-graph/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/enrell/dependencies-graph/main/install.sh | sh
 ```
 
 **Windows (PowerShell)**
 ```powershell
-irm https://raw.githubusercontent.com/enrell/dependencies-graph/master/install.ps1 | iex
+irm https://raw.githubusercontent.com/enrell/dependencies-graph/main/install.ps1 | iex
 ```
 
 ### 2. Using Cargo
