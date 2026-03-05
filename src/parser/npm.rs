@@ -18,7 +18,10 @@ impl StackParser for NpmParser {
     }
 
     fn parse(&self, project_path: &Path, max_depth: Option<usize>) -> Result<DependencyGraph> {
-        parse(project_path, max_depth)
+        let lock_path = project_path.join("package-lock.json");
+        let content =
+            std::fs::read_to_string(&lock_path).context("Failed to read package-lock.json")?;
+        parse_content(&content, max_depth)
     }
 }
 
@@ -38,13 +41,9 @@ struct PackageEntry {
     dependencies: Option<HashMap<String, String>>,
 }
 
-fn parse(project_path: &Path, max_depth: Option<usize>) -> Result<DependencyGraph> {
-    let lock_path = project_path.join("package-lock.json");
-    let content =
-        std::fs::read_to_string(&lock_path).context("Failed to read package-lock.json")?;
-
+fn parse_content(content: &str, max_depth: Option<usize>) -> Result<DependencyGraph> {
     let lock: PackageLock =
-        serde_json::from_str(&content).context("Failed to parse package-lock.json")?;
+        serde_json::from_str(content).context("Failed to parse package-lock.json")?;
 
     let version = lock.lockfile_version.unwrap_or(1);
     if version < 2 {
@@ -78,7 +77,6 @@ fn parse(project_path: &Path, max_depth: Option<usize>) -> Result<DependencyGrap
     Ok(super::bfs(&root_id, &adjacency, max_depth))
 }
 
-/// Maps each `node_modules/...` path to `(package_name, "name version")`.
 fn build_resolved_index(packages: &HashMap<String, PackageEntry>) -> HashMap<&str, (&str, String)> {
     packages
         .iter()
@@ -100,7 +98,6 @@ fn build_adjacency<'a>(
 ) -> HashMap<String, Vec<String>> {
     let mut adjacency: HashMap<String, Vec<String>> = HashMap::new();
 
-    // Root → direct dependencies
     let root_targets: Vec<String> = dep_names(root_entry)
         .into_iter()
         .filter_map(|dep_name| {
@@ -110,7 +107,6 @@ fn build_adjacency<'a>(
         .collect();
     adjacency.insert(root_id.to_string(), root_targets);
 
-    // Every other package → its dependencies
     for (path, entry) in packages {
         if path.is_empty() {
             continue;
@@ -126,11 +122,6 @@ fn build_adjacency<'a>(
     adjacency
 }
 
-/// Extracts the package name from a `node_modules/...` path.
-///
-/// - `"node_modules/foo"` → `"foo"`
-/// - `"node_modules/@scope/foo"` → `"@scope/foo"`
-/// - `"node_modules/a/node_modules/b"` → `"b"`
 fn extract_package_name(path: &str) -> &str {
     match path.rsplit_once("node_modules/") {
         Some((_, name)) => name,
@@ -146,20 +137,16 @@ fn dep_names(entry: &PackageEntry) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// Resolves a dependency name to its graph ID using the npm resolution
-/// algorithm: check nested `node_modules` first, then walk up the tree.
 fn resolve_npm_dep(
     parent_path: &str,
     dep_name: &str,
     resolved: &HashMap<&str, (&str, String)>,
 ) -> Option<String> {
-    // 1. Try nested: parent_path/node_modules/dep_name
     let nested = format!("{parent_path}/node_modules/{dep_name}");
     if let Some((_, id)) = resolved.get(nested.as_str()) {
         return Some(id.clone());
     }
 
-    // 2. Walk up: strip last /node_modules/xxx and retry
     let mut search = parent_path.to_string();
     while let Some(idx) = search.rfind("/node_modules/") {
         search.truncate(idx);
@@ -173,7 +160,55 @@ fn resolve_npm_dep(
         }
     }
 
-    // 3. Try top-level
     let top = format!("node_modules/{dep_name}");
     resolved.get(top.as_str()).map(|(_, id)| id.clone())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_npm_v3() {
+        let content = r#"{
+    "name": "test-project",
+    "version": "1.0.0",
+    "lockfileVersion": 3,
+    "packages": {
+        "": {
+            "name": "test-project",
+            "version": "1.0.0",
+            "dependencies": {
+                "express": "^4.18.0"
+            }
+        },
+        "node_modules/express": {
+            "version": "4.18.2",
+            "dependencies": {
+                "cookie": "0.5.0"
+            }
+        },
+        "node_modules/cookie": {
+            "version": "0.5.0"
+        }
+    }
+}"#;
+        let graph = parse_content(content, None).unwrap();
+        assert_eq!(graph.root, "test-project 1.0.0");
+        assert_eq!(graph.nodes.len(), 3);
+        assert_eq!(graph.edges.len(), 2);
+    }
+
+    #[test]
+    fn test_parse_unsupported_v1() {
+        let content = r#"{
+    "name": "test",
+    "version": "1.0.0",
+    "lockfileVersion": 1,
+    "dependencies": {}
+}"#;
+        let result = parse_content(content, None);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("is not supported"));
+    }
 }

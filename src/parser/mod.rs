@@ -78,3 +78,38 @@ pub(crate) fn bfs(
         edges,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bfs_full() {
+        let mut adj = HashMap::new();
+        adj.insert(
+            "A 1".to_string(),
+            vec!["B 1".to_string(), "C 1".to_string()],
+        );
+        adj.insert("B 1".to_string(), vec!["D 1".to_string()]);
+
+        let graph = bfs("A 1", &adj, None);
+
+        assert_eq!(graph.root, "A 1");
+        assert_eq!(graph.nodes.len(), 4);
+        assert_eq!(graph.edges.len(), 3);
+    }
+
+    #[test]
+    fn test_bfs_depth_limited() {
+        let mut adj = HashMap::new();
+        adj.insert("root 1".to_string(), vec!["dep1 1".to_string()]);
+        adj.insert("dep1 1".to_string(), vec!["transitive 1".to_string()]);
+
+        let graph = bfs("root 1", &adj, Some(1));
+
+        assert_eq!(graph.nodes.len(), 2);
+        assert_eq!(graph.edges.len(), 1);
+        let dep1_node = graph.nodes.iter().find(|n| n.id == "dep1 1").unwrap();
+        assert_eq!(dep1_node.depth, 1);
+    }
+}
