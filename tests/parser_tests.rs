@@ -1,7 +1,18 @@
-use depg::parser::{StackParser, bfs, cargo, go, npm, poetry};
+use depg::parser::{StackParser, bfs, cargo, detect_and_parse, go, npm, poetry};
 use std::collections::HashMap;
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+fn fixture_path(relative: &str) -> std::path::PathBuf {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("fixtures")
+        .join(relative)
+}
+
+fn read_fixture(relative: &str) -> String {
+    fs::read_to_string(fixture_path(relative)).unwrap()
+}
 
 #[test]
 fn test_bfs_full() {
@@ -31,6 +42,25 @@ fn test_bfs_depth_limited() {
     assert_eq!(graph.edges.len(), 1);
     let dep1_node = graph.nodes.iter().find(|n| n.id == "dep1 1").unwrap();
     assert_eq!(dep1_node.depth, 1);
+}
+
+#[test]
+fn test_bfs_cycle_and_diamond_deduplicates_nodes() {
+    let mut adj = HashMap::new();
+    adj.insert(
+        "root 1".to_string(),
+        vec!["a 1".to_string(), "b 1".to_string()],
+    );
+    adj.insert("a 1".to_string(), vec!["c 1".to_string()]);
+    adj.insert("b 1".to_string(), vec!["c 1".to_string()]);
+    adj.insert("c 1".to_string(), vec!["root 1".to_string()]);
+
+    let graph = bfs("root 1", &adj, None, "TestParser");
+
+    assert_eq!(graph.nodes.len(), 4);
+    assert_eq!(graph.edges.len(), 5);
+    let c_node = graph.nodes.iter().find(|n| n.id == "c 1").unwrap();
+    assert_eq!(c_node.depth, 2);
 }
 
 #[test]
@@ -98,6 +128,29 @@ fn test_parse_npm_v3() {
     assert_eq!(graph.root, "test-project 1.0.0");
     assert_eq!(graph.nodes.len(), 3);
     assert_eq!(graph.edges.len(), 2);
+}
+
+#[test]
+fn test_parse_npm_hoisting_and_scoped_resolution_from_fixture() {
+    let content = read_fixture("npm/package-lock-hoist/package-lock.json");
+    let graph = npm::parse_content(&content, None).unwrap();
+
+    assert_eq!(graph.root, "hoist-project 1.0.0");
+    assert_eq!(graph.nodes.len(), 5);
+    assert_eq!(graph.edges.len(), 4);
+
+    assert!(
+        graph
+            .edges
+            .iter()
+            .any(|e| e.source == "a 1.0.0" && e.target == "dep 1.5.0")
+    );
+    assert!(
+        graph
+            .edges
+            .iter()
+            .any(|e| e.source == "@scope/tool 3.0.0" && e.target == "dep 2.0.0")
+    );
 }
 
 #[test]
@@ -198,4 +251,47 @@ fn test_parse_node_modules_without_package_lock() {
     assert_eq!(graph.edges[0].target, "lodash 4.17.21");
 
     fs::remove_dir_all(project_dir).unwrap();
+}
+
+#[test]
+fn test_parse_bun_node_modules_hoisting_from_fixture() {
+    let parser = npm::NpmParser;
+    let project_dir = fixture_path("bun/node-modules-fallback");
+
+    assert!(parser.detect(&project_dir));
+    let graph = parser.parse(&project_dir, None).unwrap();
+
+    assert_eq!(graph.root, "bun-hoist-project 1.0.0");
+    assert!(
+        graph
+            .edges
+            .iter()
+            .any(|e| e.source == "a 1.0.0" && e.target == "dep 1.5.0")
+    );
+    assert!(
+        graph
+            .edges
+            .iter()
+            .any(|e| e.source == "@scope/tool 3.0.0" && e.target == "dep 2.0.0")
+    );
+}
+
+#[test]
+fn test_detect_and_parse_prefers_cargo_when_multiple_lockfiles_exist() {
+    let project_dir = fixture_path("mixed/cargo-and-npm");
+    let graph = detect_and_parse(&project_dir, None).unwrap();
+
+    assert_eq!(graph.parser, "Rust (Cargo)");
+    assert_eq!(graph.root, "mixed-root 0.1.0");
+}
+
+#[test]
+fn test_detect_and_parse_poetry_fixture() {
+    let project_dir = fixture_path("poetry/basic");
+    let graph = detect_and_parse(&project_dir, None).unwrap();
+
+    assert_eq!(graph.parser, "Python (Poetry)");
+    assert_eq!(graph.root, "fixture-py 0.1.0");
+    assert_eq!(graph.nodes.len(), 3);
+    assert_eq!(graph.edges.len(), 2);
 }
