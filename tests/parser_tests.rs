@@ -1,5 +1,7 @@
-use depg::parser::{bfs, cargo, go, npm, poetry};
+use depg::parser::{StackParser, bfs, cargo, go, npm, poetry};
 use std::collections::HashMap;
+use std::fs;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[test]
 fn test_bfs_full() {
@@ -154,4 +156,46 @@ fn test_parse_go_mod() {
     assert_eq!(graph.root, "example.com/mymod 0.0.0");
     assert_eq!(graph.nodes.len(), 3);
     assert_eq!(graph.edges.len(), 2);
+}
+
+#[test]
+fn test_parse_node_modules_without_package_lock() {
+    let unique = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let project_dir = std::env::temp_dir().join(format!("depg-bun-fallback-{unique}"));
+
+    fs::create_dir_all(project_dir.join("node_modules/lodash")).unwrap();
+    fs::write(
+        project_dir.join("package.json"),
+        r#"{
+"name": "bun-project",
+"version": "1.0.0",
+"dependencies": {
+    "lodash": "^4.17.21"
+}
+}"#,
+    )
+    .unwrap();
+    fs::write(
+        project_dir.join("node_modules/lodash/package.json"),
+        r#"{
+"name": "lodash",
+"version": "4.17.21"
+}"#,
+    )
+    .unwrap();
+
+    let parser = npm::NpmParser;
+    assert!(parser.detect(&project_dir));
+    let graph = parser.parse(&project_dir, None).unwrap();
+
+    assert_eq!(graph.root, "bun-project 1.0.0");
+    assert_eq!(graph.nodes.len(), 2);
+    assert_eq!(graph.edges.len(), 1);
+    assert_eq!(graph.edges[0].source, "bun-project 1.0.0");
+    assert_eq!(graph.edges[0].target, "lodash 4.17.21");
+
+    fs::remove_dir_all(project_dir).unwrap();
 }

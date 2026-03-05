@@ -34,7 +34,7 @@ pub fn detect_and_parse(project_path: &Path, max_depth: Option<usize>) -> Result
 
     bail!(
         "No supported project detected at {}.\n\
-         Supported: Rust (Cargo.lock), Node.js (package-lock.json), Python (poetry.lock), Go (go.mod)",
+         Supported: Rust (Cargo.lock), Node.js (package-lock.json / bun.lock / bun.lockb / package.json+node_modules), Python (poetry.lock), Go (go.mod)",
         project_path.display()
     )
 }

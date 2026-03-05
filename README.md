@@ -6,7 +6,7 @@ A fast, interactive dependency graph visualizer for modern codebases. **depg** a
 - ⚡ **Zero-config auto-detection**: Run `depg run` and it automatically detects your ecosystem.
 - 📦 **Supported Ecosystems**: 
   - Rust (`Cargo.lock`, complete transitive dependencies)
-  - Node.js/npm (`package-lock.json` v2/v3, fully supports npm's hoisting resolution)
+  - Node.js/npm/bun (`package-lock.json` v2/v3, `bun.lock` / `bun.lockb`, and installed `node_modules` fallback)
   - Go (`go.mod`, exact transitive links)
   - Python (`poetry.lock`, drops language noise)
 - 🕸️ **Advanced Visualization**: Uses Cytoscape.js and the `fcose` force-directed algorithm for an organic, highly-readable layout of thousands of nodes.
@@ -38,7 +38,7 @@ cargo install --git https://github.com/enrell/dependencies-graph.git
 *Alternatively, clone the repository and run `cargo install --path .`*
 
 ## Usage
-Navigate to any supported project directory (e.g., a Rust project with a `Cargo.lock` or a JS project with a `package-lock.json`), and run:
+Navigate to any supported project directory (e.g., a Rust project with a `Cargo.lock` or a JS project with a `package-lock.json` / `bun.lock`), and run:
 
 ```bash
 depg run
@@ -67,4 +67,4 @@ depg run --depth 2 --port 8080 --open
 - **Frontend Engine**: Vanilla JS + Cytoscape.js.
 
 ## License
-MIT
+[MIT](LICENSE)

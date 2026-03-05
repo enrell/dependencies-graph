@@ -14,7 +14,7 @@ src/
   parser/      — Unified parser system with BFS traversal
     mod.rs     — Parser trait and detection logic
     cargo.rs   — Cargo.lock implementation
-    npm.rs     — package-lock.json implementation
+    npm.rs     — Node.js parser (package-lock.json + bun.lock/bun.lockb + node_modules fallback)
     poetry.rs  — poetry.lock implementation
     go.rs      &mdash; go.mod implementation
   server.rs    — Axum web server with embedded static assets
@@ -42,6 +42,6 @@ web/
 
 ## Supported Ecosystems
 - [x] Rust (Cargo.lock)
-- [x] Node.js (package-lock.json)
+- [x] Node.js (package-lock.json, bun.lock/bun.lockb, node_modules fallback)
 - [x] Go (go.mod)
 - [x] Python (poetry.lock)
