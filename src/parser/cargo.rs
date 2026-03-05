@@ -1,9 +1,26 @@
 use anyhow::{Context, Result, bail};
 use serde::Deserialize;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::HashMap;
 use std::path::Path;
 
-use crate::graph::{DependencyGraph, Edge, Node};
+use super::StackParser;
+use crate::graph::DependencyGraph;
+
+pub struct CargoParser;
+
+impl StackParser for CargoParser {
+    fn name(&self) -> &'static str {
+        "Rust (Cargo)"
+    }
+
+    fn detect(&self, project_path: &Path) -> bool {
+        project_path.join("Cargo.lock").exists()
+    }
+
+    fn parse(&self, project_path: &Path, max_depth: Option<usize>) -> Result<DependencyGraph> {
+        parse(project_path, max_depth)
+    }
+}
 
 #[derive(Deserialize)]
 struct CargoLock {
@@ -18,7 +35,7 @@ struct LockPackage {
     dependencies: Option<Vec<String>>,
 }
 
-pub fn parse_cargo_lock(project_path: &Path, max_depth: Option<usize>) -> Result<DependencyGraph> {
+fn parse(project_path: &Path, max_depth: Option<usize>) -> Result<DependencyGraph> {
     let lock_path = project_path.join("Cargo.lock");
     let content = std::fs::read_to_string(&lock_path)
         .context("Failed to read Cargo.lock. Run `cargo generate-lockfile` first.")?;
@@ -39,7 +56,7 @@ pub fn parse_cargo_lock(project_path: &Path, max_depth: Option<usize>) -> Result
         .map(|p| pkg_id(&p.name, &p.version))
         .context("No root package found in Cargo.lock")?;
 
-    Ok(bfs(&root_id, &adjacency, max_depth))
+    Ok(super::bfs(&root_id, &adjacency, max_depth))
 }
 
 fn pkg_id(name: &str, version: &str) -> String {
@@ -87,57 +104,8 @@ fn resolve_dep(dep_str: &str, by_name: &HashMap<&str, Vec<(&str, String)>>) -> O
                 .iter()
                 .find(|(v, _)| *v == target)
                 .map(|(_, id)| id.clone())
-        } else if versions.len() == 1 {
-            Some(versions[0].1.clone())
         } else {
-            Some(versions[0].1.clone())
+            versions.first().map(|(_, id)| id.clone())
         }
     })
-}
-
-fn bfs(
-    root: &str,
-    adjacency: &HashMap<String, Vec<String>>,
-    max_depth: Option<usize>,
-) -> DependencyGraph {
-    let mut visited = HashSet::new();
-    let mut queue = VecDeque::new();
-    let mut nodes = Vec::new();
-    let mut edges = Vec::new();
-
-    visited.insert(root.to_string());
-    queue.push_back((root.to_string(), 0_usize));
-
-    while let Some((id, depth)) = queue.pop_front() {
-        let (name, version) = id.split_once(' ').unwrap_or((&id, ""));
-
-        nodes.push(Node {
-            id: id.clone(),
-            label: name.to_string(),
-            version: version.to_string(),
-            is_root: id == root,
-            depth,
-        });
-
-        let can_traverse = max_depth.map_or(true, |max| depth < max);
-        if can_traverse {
-            if let Some(deps) = adjacency.get(&id) {
-                for dep in deps {
-                    edges.push(Edge {
-                        source: id.clone(),
-                        target: dep.clone(),
-                    });
-                    if visited.insert(dep.clone()) {
-                        queue.push_back((dep.clone(), depth + 1));
-                    }
-                }
-            }
-        }
-    }
-
-    DependencyGraph {
-        root: root.to_string(),
-        nodes,
-        edges,
-    }
 }

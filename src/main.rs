@@ -16,7 +16,7 @@ async fn main() -> Result<()> {
             let project_path = std::env::current_dir()?;
 
             println!("🔍 Analyzing dependencies...");
-            let graph = parser::parse_cargo_lock(&project_path, depth)?;
+            let graph = parser::detect_and_parse(&project_path, depth)?;
             println!(
                 "✅ Found {} packages with {} dependency links",
                 graph.nodes.len(),
