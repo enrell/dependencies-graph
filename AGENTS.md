@@ -8,10 +8,18 @@ CLI tool that analyzes project dependency graphs and serves an interactive web v
 ```
 src/
   main.rs      — Entry point, CLI dispatch
+  lib.rs       — Library interface for integration tests
   cli.rs       — Clap CLI definitions (run subcommand)
   graph.rs     — Core data model (Node, Edge, DependencyGraph)
-  parser.rs    — Cargo.lock parser with BFS depth-limited traversal
+  parser/      — Unified parser system with BFS traversal
+    mod.rs     — Parser trait and detection logic
+    cargo.rs   — Cargo.lock implementation
+    npm.rs     — package-lock.json implementation
+    poetry.rs  — poetry.lock implementation
+    go.rs      &mdash; go.mod implementation
   server.rs    — Axum web server with embedded static assets
+tests/         — External integration test suite
+  parser_tests.rs
 web/
   index.html   — HTML shell
   style.css    — Dark theme design system
