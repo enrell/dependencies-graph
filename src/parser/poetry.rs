@@ -59,7 +59,7 @@ struct LockPackage {
     dependencies: Option<HashMap<String, toml::Value>>,
 }
 
-fn parse_content(
+pub fn parse_content(
     proj_content: &str,
     lock_content: &str,
     max_depth: Option<usize>,
@@ -123,45 +123,10 @@ fn parse_content(
         adjacency.insert(id, edges);
     }
 
-    Ok(super::bfs(&root_id, &adjacency, max_depth))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_poetry() {
-        let proj = r#"
-[tool.poetry]
-name = "depg-py"
-version = "0.1.0"
-
-[tool.poetry.dependencies]
-python = "^3.9"
-requests = "^2.31.0"
-"#;
-
-        let lock = r#"
-[[package]]
-name = "requests"
-version = "2.31.0"
-[package.dependencies]
-certifi = ">=2017.4.17"
-urllib3 = ">=1.21.1,<3"
-
-[[package]]
-name = "certifi"
-version = "2023.7.22"
-
-[[package]]
-name = "urllib3"
-version = "2.0.4"
-"#;
-
-        let graph = parse_content(proj, lock, None).unwrap();
-        assert_eq!(graph.root, "depg-py 0.1.0");
-        assert_eq!(graph.nodes.len(), 4); // root + requests + certifi + urllib3
-        assert_eq!(graph.edges.len(), 3); // root->requests, requests->certifi, requests->urllib3
-    }
+    Ok(super::bfs(
+        &root_id,
+        &adjacency,
+        max_depth,
+        "Python (Poetry)",
+    ))
 }

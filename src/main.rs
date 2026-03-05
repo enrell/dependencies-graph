@@ -1,11 +1,7 @@
-mod cli;
-mod graph;
-mod parser;
-mod server;
-
 use anyhow::Result;
 use clap::Parser;
-use cli::{Cli, Commands};
+use depg::cli::{Cli, Commands};
+use depg::{parser, server};
 
 #[tokio::main]
 async fn main() -> Result<()> {

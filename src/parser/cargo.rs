@@ -38,7 +38,7 @@ struct LockPackage {
     dependencies: Option<Vec<String>>,
 }
 
-fn parse_content(content: &str, max_depth: Option<usize>) -> Result<DependencyGraph> {
+pub fn parse_content(content: &str, max_depth: Option<usize>) -> Result<DependencyGraph> {
     let lock: CargoLock = toml::from_str(content).context("Failed to parse Cargo.lock")?;
 
     let packages = lock.package.unwrap_or_default();
@@ -55,7 +55,7 @@ fn parse_content(content: &str, max_depth: Option<usize>) -> Result<DependencyGr
         .map(|p| pkg_id(&p.name, &p.version))
         .context("No root package found in Cargo.lock")?;
 
-    Ok(super::bfs(&root_id, &adjacency, max_depth))
+    Ok(super::bfs(&root_id, &adjacency, max_depth, "Rust (Cargo)"))
 }
 
 fn pkg_id(name: &str, version: &str) -> String {
@@ -107,45 +107,4 @@ fn resolve_dep(dep_str: &str, by_name: &HashMap<&str, Vec<(&str, String)>>) -> O
             versions.first().map(|(_, id)| id.clone())
         }
     })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_cargo_lock() {
-        let content = r#"
-version = 3
-
-[[package]]
-name = "depg"
-version = "0.1.0"
-dependencies = [
- "anyhow",
-]
-
-[[package]]
-name = "anyhow"
-version = "1.0.102"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-"#;
-        let graph = parse_content(content, None).unwrap();
-        assert_eq!(graph.root, "depg 0.1.0");
-        assert_eq!(graph.nodes.len(), 2);
-        assert_eq!(graph.edges.len(), 1);
-        assert_eq!(graph.edges[0].source, "depg 0.1.0");
-        assert_eq!(graph.edges[0].target, "anyhow 1.0.102");
-    }
-
-    #[test]
-    fn test_parse_empty() {
-        let content = r#"version = 3"#;
-        let result = parse_content(content, None);
-        assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err().to_string(),
-            "No packages found in Cargo.lock"
-        );
-    }
 }

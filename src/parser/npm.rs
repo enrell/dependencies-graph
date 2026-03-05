@@ -41,7 +41,7 @@ struct PackageEntry {
     dependencies: Option<HashMap<String, String>>,
 }
 
-fn parse_content(content: &str, max_depth: Option<usize>) -> Result<DependencyGraph> {
+pub fn parse_content(content: &str, max_depth: Option<usize>) -> Result<DependencyGraph> {
     let lock: PackageLock =
         serde_json::from_str(content).context("Failed to parse package-lock.json")?;
 
@@ -74,7 +74,7 @@ fn parse_content(content: &str, max_depth: Option<usize>) -> Result<DependencyGr
     let resolved = build_resolved_index(&packages);
     let adjacency = build_adjacency(&root_id, root_entry, &packages, &resolved);
 
-    Ok(super::bfs(&root_id, &adjacency, max_depth))
+    Ok(super::bfs(&root_id, &adjacency, max_depth, "Node.js (npm)"))
 }
 
 fn build_resolved_index(packages: &HashMap<String, PackageEntry>) -> HashMap<&str, (&str, String)> {
@@ -162,53 +162,4 @@ fn resolve_npm_dep(
 
     let top = format!("node_modules/{dep_name}");
     resolved.get(top.as_str()).map(|(_, id)| id.clone())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_npm_v3() {
-        let content = r#"{
-    "name": "test-project",
-    "version": "1.0.0",
-    "lockfileVersion": 3,
-    "packages": {
-        "": {
-            "name": "test-project",
-            "version": "1.0.0",
-            "dependencies": {
-                "express": "^4.18.0"
-            }
-        },
-        "node_modules/express": {
-            "version": "4.18.2",
-            "dependencies": {
-                "cookie": "0.5.0"
-            }
-        },
-        "node_modules/cookie": {
-            "version": "0.5.0"
-        }
-    }
-}"#;
-        let graph = parse_content(content, None).unwrap();
-        assert_eq!(graph.root, "test-project 1.0.0");
-        assert_eq!(graph.nodes.len(), 3);
-        assert_eq!(graph.edges.len(), 2);
-    }
-
-    #[test]
-    fn test_parse_unsupported_v1() {
-        let content = r#"{
-    "name": "test",
-    "version": "1.0.0",
-    "lockfileVersion": 1,
-    "dependencies": {}
-}"#;
-        let result = parse_content(content, None);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("is not supported"));
-    }
 }
