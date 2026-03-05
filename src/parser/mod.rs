@@ -1,4 +1,5 @@
 pub mod cargo;
+pub mod go;
 pub mod npm;
 pub mod poetry;
 
@@ -19,6 +20,7 @@ fn parsers() -> Vec<Box<dyn StackParser>> {
         Box::new(cargo::CargoParser),
         Box::new(npm::NpmParser),
         Box::new(poetry::PoetryParser),
+        Box::new(go::GoParser),
     ]
 }
 
@@ -32,7 +34,7 @@ pub fn detect_and_parse(project_path: &Path, max_depth: Option<usize>) -> Result
 
     bail!(
         "No supported project detected at {}.\n\
-         Supported: Rust (Cargo.lock), Node.js (package-lock.json), Python (poetry.lock)",
+         Supported: Rust (Cargo.lock), Node.js (package-lock.json), Python (poetry.lock), Go (go.mod)",
         project_path.display()
     )
 }
