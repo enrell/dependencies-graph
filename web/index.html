@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>depg — Dependency Graph</title>
+    <meta name="description" content="Interactive dependency graph visualization">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header id="header">
+        <div class="header-left">
+            <div class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/>
+                    <circle cx="6" cy="18" r="3" stroke="currentColor" stroke-width="1.5"/>
+                    <circle cx="18" cy="18" r="3" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="12" y1="9" x2="6" y2="15" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="12" y1="9" x2="18" y2="15" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                <h1>depg</h1>
+            </div>
+        </div>
+        <div class="header-center">
+            <div class="search-container">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <input type="text" id="search" placeholder="Search packages..." autocomplete="off">
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="stats" id="stats"></div>
+            <div class="controls">
+                <button id="btn-fit" title="Fit to view">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button id="btn-zoom-in" title="Zoom in">+</button>
+                <button id="btn-zoom-out" title="Zoom out">&minus;</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div id="graph"></div>
+        <div id="detail-panel" class="panel hidden">
+            <button id="panel-close" class="panel-close">&times;</button>
+            <div id="panel-content"></div>
+        </div>
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Rendering graph&hellip;</p>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <script src="/app.js"></script>
+</body>
+</html>
